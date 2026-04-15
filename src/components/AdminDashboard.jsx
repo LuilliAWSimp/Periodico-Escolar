@@ -37,7 +37,7 @@ function SectionManager({
     const result = [nextArticle, ...normalizedArticles];
     onSave(result);
 
-    if (sectionKey === "escolar" && isNewArticle && onCreateMirror) {
+    if (isNewArticle && onCreateMirror) {
       onCreateMirror(nextArticle);
     }
 
@@ -128,6 +128,7 @@ function AdminDashboard({
   onSaveSchoolArticles,
   onSaveEnglishArticles,
   onCreateEnglishMirror,
+  onCreateSchoolMirror,
   siteSettings,
   onSaveSiteSettings
 }) {
@@ -177,9 +178,10 @@ function AdminDashboard({
         <SectionManager
           sectionKey="english"
           title="English"
-          note="Esta pestaña controla directamente el contenido visible de la sección English."
+          note="Crear una noticia aquí también genera automáticamente una copia inicial en Escolar."
           articles={englishArticles}
           onSave={onSaveEnglishArticles}
+          onCreateMirror={onCreateSchoolMirror}
         />
       )}
     </section>

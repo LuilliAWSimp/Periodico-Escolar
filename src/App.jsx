@@ -210,6 +210,7 @@ function AdminPage({
   onSaveSchoolArticles,
   onSaveEnglishArticles,
   onCreateEnglishMirror,
+  onCreateSchoolMirror,
   siteSettings,
   onSaveSiteSettings
 }) {
@@ -226,6 +227,7 @@ function AdminPage({
           onSaveSchoolArticles={onSaveSchoolArticles}
           onSaveEnglishArticles={onSaveEnglishArticles}
           onCreateEnglishMirror={onCreateEnglishMirror}
+          onCreateSchoolMirror={onCreateSchoolMirror}
           siteSettings={siteSettings}
           onSaveSiteSettings={onSaveSiteSettings}
         />
@@ -323,6 +325,33 @@ function App() {
         : [mirroredArticle, ...current];
 
       saveManagedArticles("english", nextArticles);
+      return nextArticles;
+    });
+  };
+
+  const handleCreateSchoolMirror = (englishArticle) => {
+    setSchoolArticles((current) => {
+      const alreadyExists = current.some(
+        (article) => article.mirroredFromEnglishId === englishArticle.id
+      );
+
+      if (alreadyExists) {
+        return current;
+      }
+
+      const mirroredArticle = {
+        ...englishArticle,
+        id: `school-${englishArticle.id}`,
+        mirroredFromEnglishId: englishArticle.id,
+        category: "Escolar",
+        author: "Redacción Escolar"
+      };
+
+      const nextArticles = mirroredArticle.featured
+        ? [mirroredArticle, ...current.map((article) => ({ ...article, featured: false }))]
+        : [mirroredArticle, ...current];
+
+      saveManagedArticles("escolar", nextArticles);
       return nextArticles;
     });
   };
@@ -445,6 +474,7 @@ function App() {
               onSaveSchoolArticles={handleSaveSchoolArticles}
               onSaveEnglishArticles={handleSaveEnglishArticles}
               onCreateEnglishMirror={handleCreateEnglishMirror}
+              onCreateSchoolMirror={handleCreateSchoolMirror}
               siteSettings={siteSettings}
               onSaveSiteSettings={handleSaveSiteSettings}
             />
