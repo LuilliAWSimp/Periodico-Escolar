@@ -1,0 +1,1 @@
+export function buildArticlePath(sectionKey, articleId) { return `/noticia/${sectionKey}/${encodeURIComponent(articleId)}`; }

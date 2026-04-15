@@ -1,0 +1,3 @@
+import { NavLink } from "react-router-dom";
+function TopNav({ sections }) { return (<nav className="top-nav" aria-label="Secciones del periódico"><div className="top-nav-inner">{Object.entries(sections).map(([key, value]) => (<NavLink key={key} to={`/${key}`} className={({ isActive }) => `nav-link nav-anchor ${isActive ? "active" : ""}`}>{value.label}</NavLink>))}</div></nav>); }
+export default TopNav;

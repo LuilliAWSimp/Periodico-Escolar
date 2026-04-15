@@ -1,0 +1,2 @@
+function SectionHero({ title, description, isExternal }) { return (<section className="section-hero"><div><p className="section-eyebrow">{isExternal ? "Fuente externa" : "Cobertura propia"}</p><h2>{title}</h2><p>{description}</p></div></section>); }
+export default SectionHero;

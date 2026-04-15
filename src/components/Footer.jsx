@@ -1,0 +1,2 @@
+function Footer() { return (<footer className="site-footer"><p>Proyecto de periódico escolar digital</p><p>Base editorial lista para seguir ampliándose sin duplicar contenido innecesario.</p></footer>); }
+export default Footer;
