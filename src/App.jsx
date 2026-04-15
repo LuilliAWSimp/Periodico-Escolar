@@ -10,6 +10,7 @@ import Footer from "./components/Footer";
 import AdminLogin from "./components/AdminLogin";
 import AdminDashboard from "./components/AdminDashboard";
 import schoolNewsSeed from "./data/schoolNews";
+import schoolNewsEnglishSeed from "./data/schoolNewsEnglish";
 import { fetchMexicoNews, fetchWorldNews } from "./services/newsApi";
 import {
   clearAdminSession,
@@ -28,8 +29,7 @@ const SECTION_CONFIG = {
   },
   english: {
     label: "English",
-    description:
-      "Esta sección reutiliza exactamente las mismas noticias que Escolar para evitar duplicación innecesaria.",
+    description: "Edición editable en inglés con su propio contenido administrable desde el panel.",
     isExternal: false
   },
   mexico: {
@@ -206,7 +206,10 @@ function AdminPage({
   isAdminAuthenticated,
   onLogout,
   schoolArticles,
+  englishArticles,
   onSaveSchoolArticles,
+  onSaveEnglishArticles,
+  onCreateEnglishMirror,
   siteSettings,
   onSaveSiteSettings
 }) {
@@ -219,7 +222,10 @@ function AdminPage({
       >
         <AdminDashboard
           schoolArticles={schoolArticles}
+          englishArticles={englishArticles}
           onSaveSchoolArticles={onSaveSchoolArticles}
+          onSaveEnglishArticles={onSaveEnglishArticles}
+          onCreateEnglishMirror={onCreateEnglishMirror}
           siteSettings={siteSettings}
           onSaveSiteSettings={onSaveSiteSettings}
         />
@@ -240,27 +246,20 @@ function App() {
   const [schoolArticles, setSchoolArticles] = useState(() =>
     loadManagedArticles("escolar", schoolNewsSeed)
   );
+  const [englishArticles, setEnglishArticles] = useState(() =>
+    loadManagedArticles("english", schoolNewsEnglishSeed)
+  );
   const [siteSettings, setSiteSettings] = useState(() => loadSiteSettings());
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => getAdminSession());
-  const [externalNews, setExternalNews] = useState({
-    mexico: [],
-    internacional: []
-  });
-  const [loading, setLoading] = useState({
-    mexico: false,
-    internacional: false
-  });
-  const [error, setError] = useState({
-    mexico: "",
-    internacional: ""
-  });
+  const [externalNews, setExternalNews] = useState({ mexico: [], internacional: [] });
+  const [loading, setLoading] = useState({ mexico: false, internacional: false });
+  const [error, setError] = useState({ mexico: "", internacional: "" });
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadExternalNews() {
       setLoading({ mexico: true, internacional: true });
-      setError({ mexico: "", internacional: "" });
 
       const [mxNews, worldNews] = await Promise.all([
         fetchMexicoNews(),
@@ -274,6 +273,7 @@ function App() {
         internacional: worldNews
       });
       setLoading({ mexico: false, internacional: false });
+      setError({ mexico: "", internacional: "" });
     }
 
     loadExternalNews().catch(() => {
@@ -295,14 +295,44 @@ function App() {
     saveManagedArticles("escolar", articles);
   };
 
+  const handleSaveEnglishArticles = (articles) => {
+    setEnglishArticles(articles);
+    saveManagedArticles("english", articles);
+  };
+
+  const handleCreateEnglishMirror = (schoolArticle) => {
+    setEnglishArticles((current) => {
+      const alreadyExists = current.some(
+        (article) => article.mirroredFromSchoolId === schoolArticle.id
+      );
+
+      if (alreadyExists) {
+        return current;
+      }
+
+      const mirroredArticle = {
+        ...schoolArticle,
+        id: `english-${schoolArticle.id}`,
+        mirroredFromSchoolId: schoolArticle.id,
+        category: "English",
+        author: "English Editorial Desk"
+      };
+
+      const nextArticles = mirroredArticle.featured
+        ? [mirroredArticle, ...current.map((article) => ({ ...article, featured: false }))]
+        : [mirroredArticle, ...current];
+
+      saveManagedArticles("english", nextArticles);
+      return nextArticles;
+    });
+  };
+
   const handleSaveSiteSettings = (nextSettings) => {
     setSiteSettings(nextSettings);
     saveSiteSettings(nextSettings);
   };
 
-  const handleLogin = () => {
-    setIsAdminAuthenticated(true);
-  };
+  const handleLogin = () => setIsAdminAuthenticated(true);
 
   const handleLogout = () => {
     clearAdminSession();
@@ -312,11 +342,11 @@ function App() {
   const sectionArticles = useMemo(
     () => ({
       escolar: schoolArticles,
-      english: schoolArticles,
+      english: englishArticles,
       mexico: externalNews.mexico,
       internacional: externalNews.internacional
     }),
-    [schoolArticles, externalNews]
+    [schoolArticles, englishArticles, externalNews]
   );
 
   const getSectionArticles = (sectionKey) => sectionArticles[sectionKey] || [];
@@ -411,7 +441,10 @@ function App() {
               isAdminAuthenticated={isAdminAuthenticated}
               onLogout={handleLogout}
               schoolArticles={schoolArticles}
+              englishArticles={englishArticles}
               onSaveSchoolArticles={handleSaveSchoolArticles}
+              onSaveEnglishArticles={handleSaveEnglishArticles}
+              onCreateEnglishMirror={handleCreateEnglishMirror}
               siteSettings={siteSettings}
               onSaveSiteSettings={handleSaveSiteSettings}
             />

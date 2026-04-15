@@ -4,7 +4,14 @@ import ArticleEditorForm from "./ArticleEditorForm";
 import SiteSettingsForm from "./SiteSettingsForm";
 import { buildArticlePath } from "../utils/articleRoutes";
 
-function SectionManager({ sectionKey, articles, onSave }) {
+function SectionManager({
+  sectionKey,
+  title,
+  note,
+  articles,
+  onSave,
+  onCreateMirror
+}) {
   const [isCreating, setIsCreating] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
 
@@ -17,6 +24,8 @@ function SectionManager({ sectionKey, articles, onSave }) {
   }, [articles]);
 
   const handleSubmit = (nextArticle, { replaceId }) => {
+    const isNewArticle = !replaceId;
+
     const withoutTarget = replaceId
       ? articles.filter((article) => article.id !== replaceId)
       : [...articles];
@@ -27,6 +36,11 @@ function SectionManager({ sectionKey, articles, onSave }) {
 
     const result = [nextArticle, ...normalizedArticles];
     onSave(result);
+
+    if (sectionKey === "escolar" && isNewArticle && onCreateMirror) {
+      onCreateMirror(nextArticle);
+    }
+
     setEditingArticle(null);
     setIsCreating(false);
   };
@@ -34,9 +48,7 @@ function SectionManager({ sectionKey, articles, onSave }) {
   const handleDelete = (articleId) => {
     const result = articles.filter((article) => article.id !== articleId);
     onSave(result);
-    if (editingArticle?.id === articleId) {
-      setEditingArticle(null);
-    }
+    if (editingArticle?.id === articleId) setEditingArticle(null);
   };
 
   return (
@@ -44,8 +56,8 @@ function SectionManager({ sectionKey, articles, onSave }) {
       <div className="manager-toolbar">
         <div>
           <p className="section-eyebrow">Gestión editorial</p>
-          <h3>Escolar</h3>
-          <p className="admin-note">La sección English reutiliza automáticamente estas mismas noticias.</p>
+          <h3>{title}</h3>
+          <p className="admin-note">{note}</p>
         </div>
         <button
           type="button"
@@ -84,7 +96,6 @@ function SectionManager({ sectionKey, articles, onSave }) {
               <h4>{article.title}</h4>
               <p>{article.summary}</p>
               {article.featured ? <span className="featured-badge">Principal</span> : null}
-
               <div className="admin-card-actions">
                 <button
                   type="button"
@@ -96,11 +107,7 @@ function SectionManager({ sectionKey, articles, onSave }) {
                 >
                   Editar
                 </button>
-                <button
-                  type="button"
-                  className="danger-button"
-                  onClick={() => handleDelete(article.id)}
-                >
+                <button type="button" className="danger-button" onClick={() => handleDelete(article.id)}>
                   Eliminar
                 </button>
                 <Link to={buildArticlePath(sectionKey, article.id)} className="card-link subtle">
@@ -117,10 +124,15 @@ function SectionManager({ sectionKey, articles, onSave }) {
 
 function AdminDashboard({
   schoolArticles,
+  englishArticles,
   onSaveSchoolArticles,
+  onSaveEnglishArticles,
+  onCreateEnglishMirror,
   siteSettings,
   onSaveSiteSettings
 }) {
+  const [activeSection, setActiveSection] = useState("escolar");
+
   return (
     <section className="admin-dashboard-shell">
       <div className="admin-dashboard-header">
@@ -128,21 +140,48 @@ function AdminDashboard({
           <p className="section-eyebrow">Administrador</p>
           <h2>Panel del periódico escolar</h2>
           <p>
-            Administra la identidad del periódico y las noticias de Escolar. English muestra exactamente las mismas noticias que Escolar para mantener una base más simple y estable.
+            Administra la identidad del periódico y edita por separado las noticias visibles de Escolar y English.
           </p>
         </div>
       </div>
 
-      <SiteSettingsForm
-        siteSettings={siteSettings}
-        onSave={onSaveSiteSettings}
-      />
+      <SiteSettingsForm siteSettings={siteSettings} onSave={onSaveSiteSettings} />
 
-      <SectionManager
-        sectionKey="escolar"
-        articles={schoolArticles}
-        onSave={onSaveSchoolArticles}
-      />
+      <div className="admin-section-switcher">
+        <button
+          type="button"
+          className={`section-switch-button ${activeSection === "escolar" ? "active" : ""}`}
+          onClick={() => setActiveSection("escolar")}
+        >
+          Editar Escolar
+        </button>
+        <button
+          type="button"
+          className={`section-switch-button ${activeSection === "english" ? "active" : ""}`}
+          onClick={() => setActiveSection("english")}
+        >
+          Editar English
+        </button>
+      </div>
+
+      {activeSection === "escolar" ? (
+        <SectionManager
+          sectionKey="escolar"
+          title="Escolar"
+          note="Crear una noticia aquí también genera automáticamente una copia inicial en English."
+          articles={schoolArticles}
+          onSave={onSaveSchoolArticles}
+          onCreateMirror={onCreateEnglishMirror}
+        />
+      ) : (
+        <SectionManager
+          sectionKey="english"
+          title="English"
+          note="Esta pestaña controla directamente el contenido visible de la sección English."
+          articles={englishArticles}
+          onSave={onSaveEnglishArticles}
+        />
+      )}
     </section>
   );
 }
