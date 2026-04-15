@@ -4,14 +4,7 @@ import ArticleEditorForm from "./ArticleEditorForm";
 import SiteSettingsForm from "./SiteSettingsForm";
 import { buildArticlePath } from "../utils/articleRoutes";
 
-function SectionManager({
-  sectionKey,
-  title,
-  note,
-  articles,
-  onSave,
-  onCreateMirror
-}) {
+function SectionManager({ sectionKey, title, note, articles, onSave, onCreateMirror, onUploadImage }) {
   const [isCreating, setIsCreating] = useState(false);
   const [editingArticle, setEditingArticle] = useState(null);
 
@@ -23,31 +16,25 @@ function SectionManager({
     });
   }, [articles]);
 
-  const handleSubmit = (nextArticle, { replaceId }) => {
+  const handleSubmit = async (nextArticle, { replaceId }) => {
     const isNewArticle = !replaceId;
-
-    const withoutTarget = replaceId
-      ? articles.filter((article) => article.id !== replaceId)
-      : [...articles];
-
-    const normalizedArticles = nextArticle.featured
-      ? withoutTarget.map((article) => ({ ...article, featured: false }))
-      : withoutTarget;
-
+    const withoutTarget = replaceId ? articles.filter((article) => article.id !== replaceId) : [...articles];
+    const normalizedArticles = nextArticle.featured ? withoutTarget.map((article) => ({ ...article, featured: false })) : withoutTarget;
     const result = [nextArticle, ...normalizedArticles];
-    onSave(result);
+
+    await onSave(result);
 
     if (isNewArticle && onCreateMirror) {
-      onCreateMirror(nextArticle);
+      await onCreateMirror(nextArticle);
     }
 
     setEditingArticle(null);
     setIsCreating(false);
   };
 
-  const handleDelete = (articleId) => {
+  const handleDelete = async (articleId) => {
     const result = articles.filter((article) => article.id !== articleId);
-    onSave(result);
+    await onSave(result);
     if (editingArticle?.id === articleId) setEditingArticle(null);
   };
 
@@ -59,28 +46,13 @@ function SectionManager({
           <h3>{title}</h3>
           <p className="admin-note">{note}</p>
         </div>
-        <button
-          type="button"
-          className="primary-button"
-          onClick={() => {
-            setEditingArticle(null);
-            setIsCreating(true);
-          }}
-        >
+        <button type="button" className="primary-button" onClick={() => { setEditingArticle(null); setIsCreating(true); }}>
           Nueva noticia
         </button>
       </div>
 
       {isCreating || editingArticle ? (
-        <ArticleEditorForm
-          sectionKey={sectionKey}
-          article={editingArticle}
-          onCancel={() => {
-            setIsCreating(false);
-            setEditingArticle(null);
-          }}
-          onSubmit={handleSubmit}
-        />
+        <ArticleEditorForm sectionKey={sectionKey} article={editingArticle} onCancel={() => { setIsCreating(false); setEditingArticle(null); }} onSubmit={handleSubmit} onUploadImage={onUploadImage} />
       ) : null}
 
       <div className="admin-list-grid">
@@ -97,22 +69,9 @@ function SectionManager({
               <p>{article.summary}</p>
               {article.featured ? <span className="featured-badge">Principal</span> : null}
               <div className="admin-card-actions">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => {
-                    setEditingArticle(article);
-                    setIsCreating(false);
-                  }}
-                >
-                  Editar
-                </button>
-                <button type="button" className="danger-button" onClick={() => handleDelete(article.id)}>
-                  Eliminar
-                </button>
-                <Link to={buildArticlePath(sectionKey, article.id)} className="card-link subtle">
-                  Ver detalle
-                </Link>
+                <button type="button" className="secondary-button" onClick={() => { setEditingArticle(article); setIsCreating(false); }}>Editar</button>
+                <button type="button" className="danger-button" onClick={() => handleDelete(article.id)}>Eliminar</button>
+                <Link to={buildArticlePath(sectionKey, article.id)} className="card-link subtle">Ver detalle</Link>
               </div>
             </div>
           </article>
@@ -129,6 +88,7 @@ function AdminDashboard({
   onSaveEnglishArticles,
   onCreateEnglishMirror,
   onCreateSchoolMirror,
+  onUploadImage,
   siteSettings,
   onSaveSiteSettings
 }) {
@@ -140,27 +100,17 @@ function AdminDashboard({
         <div>
           <p className="section-eyebrow">Administrador</p>
           <h2>Panel del periódico escolar</h2>
-          <p>
-            Administra la identidad del periódico y edita por separado las noticias visibles de Escolar y English.
-          </p>
+          <p>Administra la identidad del periódico y edita por separado las noticias visibles de Escolar y English.</p>
         </div>
       </div>
 
       <SiteSettingsForm siteSettings={siteSettings} onSave={onSaveSiteSettings} />
 
       <div className="admin-section-switcher">
-        <button
-          type="button"
-          className={`section-switch-button ${activeSection === "escolar" ? "active" : ""}`}
-          onClick={() => setActiveSection("escolar")}
-        >
+        <button type="button" className={`section-switch-button ${activeSection === "escolar" ? "active" : ""}`} onClick={() => setActiveSection("escolar")}>
           Editar Escolar
         </button>
-        <button
-          type="button"
-          className={`section-switch-button ${activeSection === "english" ? "active" : ""}`}
-          onClick={() => setActiveSection("english")}
-        >
+        <button type="button" className={`section-switch-button ${activeSection === "english" ? "active" : ""}`} onClick={() => setActiveSection("english")}>
           Editar English
         </button>
       </div>
@@ -173,6 +123,7 @@ function AdminDashboard({
           articles={schoolArticles}
           onSave={onSaveSchoolArticles}
           onCreateMirror={onCreateEnglishMirror}
+          onUploadImage={onUploadImage}
         />
       ) : (
         <SectionManager
@@ -182,6 +133,7 @@ function AdminDashboard({
           articles={englishArticles}
           onSave={onSaveEnglishArticles}
           onCreateMirror={onCreateSchoolMirror}
+          onUploadImage={onUploadImage}
         />
       )}
     </section>

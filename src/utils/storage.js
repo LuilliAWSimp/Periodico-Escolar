@@ -5,20 +5,18 @@ const STORAGE_KEYS = {
   siteSettings: "periodico_site_settings"
 };
 
-const DEFAULT_IMAGE =
-  "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80";
-
-const DEFAULT_SITE_SETTINGS = {
+export const DEFAULT_SITE_SETTINGS = {
   topMeta: "Edición digital escolar",
   kicker: "Comunidad • Escuela • Cultura • Actualidad",
   title: "El Faro Escolar",
   subtitle: "Un periódico escolar digital con mirada local, nacional e internacional"
 };
 
-export function loadManagedArticles(sectionKey, fallbackArticles) {
+export function loadLegacyManagedArticles(sectionKey, fallbackArticles) {
   if (typeof window === "undefined") return fallbackArticles;
   const storageKey = STORAGE_KEYS[sectionKey];
   if (!storageKey) return fallbackArticles;
+
   try {
     const stored = window.localStorage.getItem(storageKey);
     if (!stored) return fallbackArticles;
@@ -29,15 +27,16 @@ export function loadManagedArticles(sectionKey, fallbackArticles) {
   }
 }
 
-export function saveManagedArticles(sectionKey, articles) {
+export function saveLegacyManagedArticles(sectionKey, articles) {
   if (typeof window === "undefined") return;
   const storageKey = STORAGE_KEYS[sectionKey];
   if (!storageKey) return;
   window.localStorage.setItem(storageKey, JSON.stringify(articles));
 }
 
-export function loadSiteSettings() {
+export function loadLegacySiteSettings() {
   if (typeof window === "undefined") return DEFAULT_SITE_SETTINGS;
+
   try {
     const stored = window.localStorage.getItem(STORAGE_KEYS.siteSettings);
     if (!stored) return DEFAULT_SITE_SETTINGS;
@@ -47,7 +46,7 @@ export function loadSiteSettings() {
   }
 }
 
-export function saveSiteSettings(settings) {
+export function saveLegacySiteSettings(settings) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(
     STORAGE_KEYS.siteSettings,
@@ -88,28 +87,10 @@ export function getTodayDisplayDate(sectionKey) {
       year: "numeric"
     }).format(new Date());
   }
+
   return new Intl.DateTimeFormat("es-MX", {
     day: "2-digit",
     month: "long",
     year: "numeric"
   }).format(new Date());
-}
-
-export function normalizeFormArticle(article) {
-  const safeImage = article.image?.trim() || DEFAULT_IMAGE;
-  return {
-    id: article.id,
-    title: article.title.trim(),
-    summary: article.summary.trim(),
-    content: article.content.trim(),
-    image: safeImage,
-    category: article.category.trim(),
-    author: article.author.trim(),
-    date: article.date.trim(),
-    featured: Boolean(article.featured),
-    externalUrl: null,
-    imageFit: article.imageFit || "cover",
-    imagePosition: article.imagePosition || "center center",
-    imageHeight: Number(article.imageHeight) || 320
-  };
 }
